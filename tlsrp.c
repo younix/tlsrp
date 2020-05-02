@@ -12,6 +12,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <libressl/tls.h>
 
 #include "util.h"
 
@@ -128,8 +129,19 @@ static void dowrite(int fd, char* buf, size_t towrite) {
     }
 }
 
+static void dotlswrite(struct tls *tlss, char* buf, size_t towrite) {
+    ssize_t written = 0;
+    while (towrite > 0) {
+        written = tls_write(tlss, buf, towrite);
+        if (written == -1)
+            die("failed to write:");
+        towrite -= written;
+        buf += written;
+    }
+}
+
 static int
-serve(int serverfd, int clientfd)
+serve(int serverfd, int clientfd, struct tls *clientconn)
 {
     struct pollfd pfd[] = {
         {serverfd, POLLIN | POLLOUT, 0},
@@ -146,7 +158,7 @@ serve(int serverfd, int clientfd)
             return -1;
 
         if ((pfd[CLIENT].revents & POLLIN)) {
-            clicount = read(clientfd, clibuf, BUF_SIZE);
+            clicount = tls_read(clientconn, clibuf, BUF_SIZE);
             if (clicount == -1) {
                 die("client read failed:");
                 return -2;
@@ -167,7 +179,7 @@ serve(int serverfd, int clientfd)
         }
 
         if ((pfd[CLIENT].revents & POLLOUT) && sercount > 0) {
-            dowrite(clientfd, serbuf, sercount);
+            dotlswrite(clientconn, serbuf, sercount);
             sercount = 0;
         }
 
@@ -184,10 +196,11 @@ serve(int serverfd, int clientfd)
 int 
 main(int argc, char* argv[])
 {
-    int to_server = 0, to_client = 0;
+    int serverfd = 0, clientfd = 0, bindfd = 0;
     struct sockaddr_storage client_sa, server_sa = {0};
+    struct tls_config *config;
+    struct tls *tls_client, *conn;
     socklen_t client_sa_len = 0;
-    int serverfd, bindfd;
     char *usock = NULL,
          *host  = NULL,
          *backport = NULL,
@@ -213,6 +226,38 @@ main(int argc, char* argv[])
     if (usock && (host || backport))
         die("cannot use both unix and network socket");
 
+    if ((config = tls_config_new()) == NULL) {
+        die("failed to get tls config:");
+    }
+
+    if (tls_config_set_ca_file(config, "~/projects/libtls/CA/root.pem") == -1) {
+        tls_config_free(config);
+        die("failed to load ca file:");
+    }
+
+    if (tls_config_set_cert_file(config, "~/projects/libtls/CA/server.crt") == -1) {
+        tls_config_free(config);
+        die("failed to load cert file:");
+    }
+
+    if (tls_config_set_key_file(config, "~/projects/libtls/CA/server.key") == -1) {
+        tls_config_free(config);
+        die("failed to load key file:");
+    }
+
+    if ((tls_client = tls_server()) == NULL) {
+        tls_config_free(config);
+        die("failed to create server context:");
+    }
+
+    if ((tls_configure(tls_client, config)) == -1) {
+        tls_config_free(config);
+        tls_free(tls_client);
+        die("failed to configure server:");
+    }
+    
+    tls_config_free(config);
+
     bindfd = dobind(NULL, frontport);
 
     if (listen(bindfd, BACKLOG) == -1) {
@@ -220,11 +265,10 @@ main(int argc, char* argv[])
         die("could not start listen:");
     }
 
-
     pid_t pid;
 
     while (1) {
-        if ((to_client = accept(bindfd, (struct sockaddr*) &client_sa, 
+        if ((clientfd = accept(bindfd, (struct sockaddr*) &client_sa, 
                         &client_sa_len)) == -1) {
             warn("could not accept connection:");
         }
@@ -234,34 +278,23 @@ main(int argc, char* argv[])
                 warn("fork:");
             case 0:
                 if (usock)
-                    to_server = dounixconnect(usock);
+                    serverfd = dounixconnect(usock);
                 else
-                    to_server = donetworkconnect(host, backport);
+                    serverfd = donetworkconnect(host, backport);
 
-                if (to_server)
-                    serve(to_server, to_client);
-                close(to_server);
-                close(to_client);
+                tls_accept_socket(tls_client, &conn, clientfd);
+
+                if (serverfd)
+                    serve(serverfd, clientfd, conn);
+
+                tls_close(conn);
+                close(serverfd);
+                close(clientfd);
                 close(bindfd);
                 exit(0);
-                break;
             default:
-                close(to_client);
+                close(clientfd);
         }
     }
-
-    // TODO Initialize
-    //  - validate addresses
-    //  - create sockets
-    //  - bind
-    //  - listen
-    // TODO Serve
-    //  - fork
-    //  - accept connect
-    //  - serve
-    //  - close
-    // TODO Shutdown
-    //  - close sockets
-    //  - unlink
 }
 
