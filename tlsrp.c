@@ -117,7 +117,7 @@ donetworkconnect(const char* host, const char* port)
     return sfd;
 }
 
-void dowrite(int fd, char* buf, size_t towrite) {
+static void dowrite(int fd, char* buf, size_t towrite) {
     ssize_t written = 0;
     while (towrite > 0) {
         written = write(fd, buf, towrite);
