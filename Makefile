@@ -13,4 +13,7 @@ all:
 	$(CC) $(SRC) -o $(OBJ) $(FLAGS)
 
 clean:
-	rm tlsrp
+	rm $(OBJ)
+
+run:
+	LD_LIBRARY_PATH=/usr/lib/libressl ./$(OBJ)
