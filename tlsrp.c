@@ -276,7 +276,7 @@ main(int argc, char* argv[])
     
     tls_config_free(config);
 
-    bindfd = dobind(NULL, frontport);
+    bindfd = dobind(host, frontport);
 
     if (listen(bindfd, BACKLOG) == -1) {
         close(bindfd);
