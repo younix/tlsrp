@@ -32,7 +32,6 @@ usage()
 	exit(1);
 }
 
-// TODO add domain support?
 static int
 dobind(const char *host, const char *port)
 {
@@ -140,6 +139,7 @@ static void dotlswrite(struct tls *tlss, char* buf, size_t towrite) {
     }
 }
 
+// TODO use TLS_WANT_POLL(IN/OUT) instead of normal ones
 static int
 serve(int serverfd, int clientfd, struct tls *clientconn)
 {
@@ -204,7 +204,10 @@ main(int argc, char* argv[])
     char *usock = NULL,
          *host  = NULL,
          *backport = NULL,
-         *frontport = NULL;
+         *frontport = NULL,
+         *ca_path = NULL,
+         *cert_path = NULL,
+         *key_path = NULL;
 
     if (argc < 3)
         usage();
@@ -219,6 +222,12 @@ main(int argc, char* argv[])
             backport = argv[++i];
         else if (strcmp(argv[i], "-f") == 0)
             frontport = argv[++i];
+        else if (strcmp(argv[i], "-a") == 0)
+            ca_path = argv[++i];
+        else if (strcmp(argv[i], "-r") == 0)
+            cert_path = argv[++i];
+        else if (strcmp(argv[i], "-k") == 0)
+            key_path = argv[++i];
         else
             usage();
     }
@@ -226,21 +235,30 @@ main(int argc, char* argv[])
     if (usock && (host || backport))
         die("cannot use both unix and network socket");
 
+    if (!ca_path)
+        die("need to provide certificate authority file path");
+
+    if (!cert_path)
+        die("need to provide certificate file path");
+
+    if (!key_path)
+        die("need to provide key file path");
+
     if ((config = tls_config_new()) == NULL) {
         die("failed to get tls config:");
     }
 
-    if (tls_config_set_ca_file(config, "/home/nihal/projects/libtls/CA/root.pem") == -1) {
+    if (tls_config_set_ca_file(config, ca_path) == -1) {
         tls_config_free(config);
         die("failed to load ca file:");
     }
 
-    if (tls_config_set_cert_file(config, "/home/nihal/projects/libtls/CA/server.crt") == -1) {
+    if (tls_config_set_cert_file(config, cert_path) == -1) {
         tls_config_free(config);
         die("failed to load cert file:");
     }
 
-    if (tls_config_set_key_file(config, "/home/nihal/projects/libtls/CA/server.key") == -1) {
+    if (tls_config_set_key_file(config, key_path) == -1) {
         tls_config_free(config);
         die("failed to load key file:");
     }
