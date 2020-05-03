@@ -160,7 +160,7 @@ serve(int serverfd, int clientfd, struct tls *clientconn)
         if ((pfd[CLIENT].revents & POLLIN)) {
             clicount = tls_read(clientconn, clibuf, BUF_SIZE);
             if (clicount == -1) {
-                die("client read failed:");
+                die("client read failed: %s\n", tls_error(clientconn));
                 return -2;
             }
         }
@@ -230,17 +230,17 @@ main(int argc, char* argv[])
         die("failed to get tls config:");
     }
 
-    if (tls_config_set_ca_file(config, "~/projects/libtls/CA/root.pem") == -1) {
+    if (tls_config_set_ca_file(config, "/home/nihal/projects/libtls/CA/root.pem") == -1) {
         tls_config_free(config);
         die("failed to load ca file:");
     }
 
-    if (tls_config_set_cert_file(config, "~/projects/libtls/CA/server.crt") == -1) {
+    if (tls_config_set_cert_file(config, "/home/nihal/projects/libtls/CA/server.crt") == -1) {
         tls_config_free(config);
         die("failed to load cert file:");
     }
 
-    if (tls_config_set_key_file(config, "~/projects/libtls/CA/server.key") == -1) {
+    if (tls_config_set_key_file(config, "/home/nihal/projects/libtls/CA/server.key") == -1) {
         tls_config_free(config);
         die("failed to load key file:");
     }
@@ -282,12 +282,16 @@ main(int argc, char* argv[])
                 else
                     serverfd = donetworkconnect(host, backport);
 
-                tls_accept_socket(tls_client, &conn, clientfd);
+                if (tls_accept_socket(tls_client, &conn, clientfd) == -1) {
+                    warn("tls_accept_socket: %s", tls_error(tls_client));
+                    goto tlsfail;
+                }
 
                 if (serverfd)
                     serve(serverfd, clientfd, conn);
 
                 tls_close(conn);
+tlsfail:
                 close(serverfd);
                 close(clientfd);
                 close(bindfd);
