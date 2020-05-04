@@ -117,29 +117,6 @@ donetworkconnect(const char* host, const char* port)
     return sfd;
 }
 
-static void dowrite(int fd, char* buf, size_t towrite) {
-    ssize_t written = 0;
-    while (towrite > 0) {
-        written = write(fd, buf, towrite);
-        if (written == -1)
-            die("failed to write:");
-        towrite -= written;
-        buf += written;
-    }
-}
-
-static void dotlswrite(struct tls *tlss, char* buf, size_t towrite) {
-    ssize_t written = 0;
-    while (towrite > 0) {
-        written = tls_write(tlss, buf, towrite);
-        if (written == -1)
-            die("failed to write:");
-        towrite -= written;
-        buf += written;
-    }
-}
-
-// TODO use TLS_WANT_POLL(IN/OUT) instead of normal ones
 static int
 serve(int serverfd, int clientfd, struct tls *clientconn)
 {
@@ -151,36 +128,58 @@ serve(int serverfd, int clientfd, struct tls *clientconn)
     char clibuf[BUF_SIZE] = {0};
     char serbuf[BUF_SIZE] = {0};
 
+    char *cliptr = NULL, *serptr = NULL;
+
     size_t clicount = 0, sercount = 0;
+    ssize_t written = 0;
 
     while (poll(pfd, 2, TIMEOUT) != 0) {
         if ((pfd[CLIENT].revents | pfd[SERVER].revents) & POLLNVAL)
             return -1;
 
-        if ((pfd[CLIENT].revents & POLLIN)) {
+        if ((pfd[CLIENT].revents & POLLIN) && clicount == 0) {
             clicount = tls_read(clientconn, clibuf, BUF_SIZE);
             if (clicount == -1) {
                 die("client read failed: %s\n", tls_error(clientconn));
                 return -2;
+            } else if (clicount == TLS_WANT_POLLIN) {
+                pfd[CLIENT].events = POLLIN;
+            } else if (clicount == TLS_WANT_POLLOUT) {
+                pfd[CLIENT].events = POLLOUT;
+            } else {
+                cliptr = clibuf;
             }
         }
 
-        if ((pfd[SERVER].revents & POLLIN)) {
+        if ((pfd[SERVER].revents & POLLIN) && sercount == 0) {
             sercount = read(serverfd, serbuf, BUF_SIZE);
             if (sercount == -1) {
                 die("server read failed:");
                 return -3;
             }
+            serptr = serbuf;
         }
 
         if ((pfd[SERVER].revents & POLLOUT) && clicount > 0) {
-            dowrite(serverfd, clibuf, clicount);
-            clicount = 0;
+            written = write(serverfd, cliptr, clicount);
+            if (written == -1)
+                die("failed to write:");
+            clicount -= written;
+            cliptr += written;
         }
 
         if ((pfd[CLIENT].revents & POLLOUT) && sercount > 0) {
-            dotlswrite(clientconn, serbuf, sercount);
-            sercount = 0;
+            written = tls_write(clientconn, serptr, sercount);
+            if (written == -1)
+                die("failed tls_write: %s\n", tls_error(clientconn));
+            else if (written == TLS_WANT_POLLIN) {
+                pfd[CLIENT].events = POLLIN;
+            } else if (written == TLS_WANT_POLLOUT) {
+                pfd[CLIENT].events = POLLOUT;
+            } else {
+                sercount -= written;
+                serptr += written;
+            }
         }
 
         if ((pfd[CLIENT].revents | pfd[SERVER].revents) & POLLHUP)
@@ -309,7 +308,7 @@ main(int argc, char* argv[])
                     serve(serverfd, clientfd, conn);
 
                 tls_close(conn);
-tlsfail:
+            tlsfail:
                 close(serverfd);
                 close(clientfd);
                 close(bindfd);
