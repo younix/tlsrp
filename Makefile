@@ -9,7 +9,12 @@ CC = cc
 SRC = tlsrp.c util.c
 OBJ = tlsrp
 
-all:
+all: config.h tlsrp
+
+config.h:
+	cp config.def.h $@
+
+tlsrp:
 	$(CC) $(SRC) -o $(OBJ) $(FLAGS)
 
 clean:

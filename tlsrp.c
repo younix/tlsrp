@@ -15,6 +15,7 @@
 #include <libressl/tls.h>
 
 #include "util.h"
+#include "config.h"
 
 // capped at 104 for portability
 #define SUN_PATH_LENGTH 104
@@ -245,6 +246,22 @@ main(int argc, char* argv[])
 
     if ((config = tls_config_new()) == NULL) {
         die("failed to get tls config:");
+    }
+
+    if (tls_config_set_protocols(config, protocols) == -1) {
+        die("failed to set protocols:");
+    }
+
+    if (tls_config_set_ciphers(config, ciphers) == -1) {
+        die("failed to set ciphers:");
+    }
+
+    if (tls_config_set_dheparams(config, dheparams) == -1) {
+        die("failed to set dheparams:");
+    }
+
+    if (tls_config_set_ecdhecurves(config, ecdhecurves) == -1) {
+        die("failed to set ecdhecurves:");
     }
 
     if (tls_config_set_ca_file(config, ca_path) == -1) {
