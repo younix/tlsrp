@@ -28,8 +28,8 @@
 void 
 usage()
 {
-    puts("usage: tlsrp [-h host] -p port -f PORT -a ca_path -r cert_path -k key_path");
-    puts("usage: tlsrp -U unixsocket -f PORT -a ca_path -r cert_path -k key_path");
+    puts("usage: tlsrp [-h host] -p port -f PORT -ca ca_path -cert cert_path -key key_path");
+    puts("usage: tlsrp -U unixsocket -f PORT -ca ca_path -cert cert_path -key key_path");
 	exit(1);
 }
 
@@ -222,11 +222,11 @@ main(int argc, char* argv[])
             backport = argv[++i];
         else if (strcmp(argv[i], "-f") == 0)
             frontport = argv[++i];
-        else if (strcmp(argv[i], "-a") == 0)
+        else if (strcmp(argv[i], "-ca") == 0)
             ca_path = argv[++i];
-        else if (strcmp(argv[i], "-r") == 0)
+        else if (strcmp(argv[i], "-cert") == 0)
             cert_path = argv[++i];
-        else if (strcmp(argv[i], "-k") == 0)
+        else if (strcmp(argv[i], "-key") == 0)
             key_path = argv[++i];
         else
             usage();
