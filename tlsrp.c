@@ -28,8 +28,8 @@
 void 
 usage()
 {
-    puts("usage: tlsrp [-h host] -p port -f PORT");
-    puts("       tlsrp -U unixsocket -f PORT");
+    puts("usage: tlsrp [-h host] -p port -f PORT -a ca_path -r cert_path -k key_path");
+    puts("usage: tlsrp -U unixsocket -f PORT -a ca_path -r cert_path -k key_path");
 	exit(1);
 }
 
