@@ -1,8 +1,6 @@
 LIBTLS_PKGCONF_PATH = /usr/lib/libressl/pkgconfig/
-LIBTLS_FLAGS = $(shell PKG_CONFIG_PATH=$(LIBTLS_PKGCONF_PATH) pkg-config --cflags --libs libtls)
 
-# link against libbsd for strlcpy on Linux, not necessary on BSD
-FLAGS = -lbsd $(LIBTLS_FLAGS)
+FLAGS = $(shell PKG_CONFIG_PATH=$(LIBTLS_PKGCONF_PATH) pkg-config --cflags --libs libtls)
 
 CC = cc
 

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <bsd/string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -17,8 +16,6 @@
 #include "util.h"
 #include "config.h"
 
-// capped at 104 for portability
-#define SUN_PATH_LENGTH 104
 #define BACKLOG 10
 #define BUF_SIZE 1024
 #define TIMEOUT 1000
@@ -70,12 +67,10 @@ dounixconnect(const char *sockname)
     int sfd;
     struct sockaddr_un saddr = {0};
 
-    if (strlen(sockname) > SUN_PATH_LENGTH-1)
+    if (!memccpy(saddr.sun_path, sockname, '\0', sizeof(saddr.sun_path)))
         die("unix socket path too long");
 
     saddr.sun_family = AF_UNIX;
-
-    strlcpy((char *) &saddr.sun_path, sockname, SUN_PATH_LENGTH);
 
     if ((sfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
         die("failed to create unix socket:");
