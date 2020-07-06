@@ -233,51 +233,35 @@ main(int argc, char* argv[])
     if (!key_path)
         die("need to provide key file path");
 
-    if ((config = tls_config_new()) == NULL) {
+    if ((config = tls_config_new()) == NULL)
         die("failed to get tls config:");
-    }
 
-    if (tls_config_set_protocols(config, protocols) == -1) {
+    if (tls_config_set_protocols(config, protocols) == -1)
         die("failed to set protocols:");
-    }
 
-    if (tls_config_set_ciphers(config, ciphers) == -1) {
+    if (tls_config_set_ciphers(config, ciphers) == -1)
         die("failed to set ciphers:");
-    }
 
-    if (tls_config_set_dheparams(config, dheparams) == -1) {
+    if (tls_config_set_dheparams(config, dheparams) == -1)
         die("failed to set dheparams:");
-    }
 
-    if (tls_config_set_ecdhecurves(config, ecdhecurves) == -1) {
+    if (tls_config_set_ecdhecurves(config, ecdhecurves) == -1)
         die("failed to set ecdhecurves:");
-    }
 
-    if (tls_config_set_ca_file(config, ca_path) == -1) {
-        tls_config_free(config);
+    if (tls_config_set_ca_file(config, ca_path) == -1)
         die("failed to load ca file:");
-    }
 
-    if (tls_config_set_cert_file(config, cert_path) == -1) {
-        tls_config_free(config);
+    if (tls_config_set_cert_file(config, cert_path) == -1)
         die("failed to load cert file:");
-    }
 
-    if (tls_config_set_key_file(config, key_path) == -1) {
-        tls_config_free(config);
+    if (tls_config_set_key_file(config, key_path) == -1)
         die("failed to load key file:");
-    }
 
-    if ((tls_client = tls_server()) == NULL) {
-        tls_config_free(config);
+    if ((tls_client = tls_server()) == NULL)
         die("failed to create server context:");
-    }
 
-    if ((tls_configure(tls_client, config)) == -1) {
-        tls_config_free(config);
-        tls_free(tls_client);
+    if ((tls_configure(tls_client, config)) == -1)
         die("failed to configure server:");
-    }
     
     tls_config_free(config);
 
