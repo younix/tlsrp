@@ -20,7 +20,7 @@ void
 usage()
 {
     puts("usage: tlsrp [-h host] -p port -f PORT -ca ca_path -cert cert_path -key key_path");
-    puts("usage: tlsrp -U unixsocket -f PORT -ca ca_path -cert cert_path -key key_path");
+    puts("       tlsrp -U unixsocket -f PORT -ca ca_path -cert cert_path -key key_path");
 	exit(1);
 }
 
