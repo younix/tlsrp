@@ -10,8 +10,6 @@
 
 #include "util.h"
 
-char *argv0;
-
 static void
 verr(const char *fmt, va_list ap)
 {

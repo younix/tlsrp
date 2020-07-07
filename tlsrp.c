@@ -16,11 +16,13 @@
 #define SERVER 0
 #define CLIENT 1
 
+char *argv0;
+
 void 
 usage()
 {
-    puts("usage: tlsrp [-h host] -p port -f PORT -ca ca_path -cert cert_path -key key_path");
-    puts("       tlsrp -U unixsocket -f PORT -ca ca_path -cert cert_path -key key_path");
+    fprintf(stderr, "usage: %s [-h host] -p port -f PORT -ca ca_path -cert cert_path -key key_path\n", argv0);
+    fprintf(stderr, "       %s -U unixsocket -f PORT -ca ca_path -cert cert_path -key key_path\n", argv0);
 	exit(1);
 }
 
@@ -198,6 +200,8 @@ main(int argc, char* argv[])
          *cert_path = NULL,
          *key_path = NULL;
 
+    argv0 = argv[0];
+
     if (argc < 3)
         usage();
 
@@ -224,14 +228,8 @@ main(int argc, char* argv[])
     if (usock && (host || backport))
         die("cannot use both unix and network socket");
 
-    if (!ca_path)
-        die("need to provide certificate authority file path");
-
-    if (!cert_path)
-        die("need to provide certificate file path");
-
-    if (!key_path)
-        die("need to provide key file path");
+    if (!ca_path || !cert_path || !key_path)
+        usage();
 
     if ((config = tls_config_new()) == NULL)
         die("failed to get tls config:");
