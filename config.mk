@@ -8,4 +8,3 @@ FLAGS = `PKG_CONFIG_PATH=$(LIBTLS_PKGCONF_PATH) pkg-config --cflags --libs libtl
 FLAGS = -ltls
 
 SRC = tlsrp.c util.c
-BIN = tlsrp
