@@ -6,7 +6,7 @@ config.h:
 	cp config.def.h $@
 
 tlsrp: $(SRC) config.h
-	$(CC) $(SRC) -o $(BIN) $(FLAGS)
+	$(CC) $(CFLAGS) $(SRC) -o $(BIN) $(FLAGS)
 
 clean:
 	rm -f $(BIN)
