@@ -5,7 +5,7 @@ FLAGS = `PKG_CONFIG_PATH=$(LIBTLS_PKGCONF_PATH) pkg-config --cflags --libs libtl
 CC = cc
 
 SRC = tlsrp.c util.c
-OBJ = tlsrp
+BIN = tlsrp
 
 all: config.h tlsrp
 
@@ -13,10 +13,10 @@ config.h:
 	cp config.def.h $@
 
 tlsrp:
-	$(CC) $(SRC) -o $(OBJ) $(FLAGS)
+	$(CC) $(SRC) -o $(BIN) $(FLAGS)
 
 clean:
-	rm -f $(OBJ)
+	rm -f $(BIN)
 
 run:
-	LD_LIBRARY_PATH=/usr/lib/libressl ./$(OBJ) -U "/tmp/conn.socket" -f 443 -a "/home/nihal/projects/libtls/CA/root.pem" -r "/home/nihal/projects/libtls/CA/server.crt" -k "/home/nihal/projects/libtls/CA/server.key"
+	LD_LIBRARY_PATH=/usr/lib/libressl ./$(BIN) -U "/tmp/conn.socket" -f 443 -a "/home/nihal/projects/libtls/CA/root.pem" -r "/home/nihal/projects/libtls/CA/server.crt" -k "/home/nihal/projects/libtls/CA/server.key"
