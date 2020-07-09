@@ -20,8 +20,8 @@
 
 char *argv0;
 
-void 
-usage()
+static void
+usage(void)
 {
     fprintf(stderr, "usage: %s [-h host] -p port -f PORT -ca ca_path -cert cert_path -key key_path\n", argv0);
     fprintf(stderr, "       %s -U unixsocket -f PORT -ca ca_path -cert cert_path -key key_path\n", argv0);
