@@ -1,11 +1,11 @@
 .include "config.mk"
 
-all: config.h tlsrp
+all: tlsrp
 
 config.h:
 	cp config.def.h $@
 
-tlsrp:
+tlsrp: $(SRC) config.h
 	$(CC) $(SRC) -o $(BIN) $(FLAGS)
 
 clean:
